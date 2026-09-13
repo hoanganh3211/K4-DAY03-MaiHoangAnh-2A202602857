@@ -36,27 +36,56 @@ class MockOfflineProvider(BaseLLMProvider):
 
     def generate_with_tools(self, prompt: str, tools_schema: List[Dict[str, Any]], system_prompt: str = "") -> Dict[str, Any]:
         prompt_lower = prompt.lower()
-        
-        # Mô phỏng nhận diện intent gọi Tool
-        if "sv2026001" in prompt_lower and "đặt lịch" in prompt_lower:
+
+        # Nếu prompt chứa Observation từ bước trước → LLM tổng hợp Final Answer
+        if "[observation]" in prompt_lower:
+            # Multi-step: Observation từ gym_query SUCCESS + câu hỏi gốc yêu cầu đặt lịch → gọi book_session
+            if "gym_query" in prompt_lower and "not_found" not in prompt_lower and ("đặt lịch" in prompt_lower or "rảnh" in prompt_lower or "kiểm tra" in prompt_lower):
+                return {
+                    "type": "tool_call",
+                    "tool_name": "book_session",
+                    "arguments": {"member_id": "GYM12345", "datetime_str": "19:00 16/09/2026", "trainer_name": "PT Trần Thị B"},
+                    "thought": "Đã tra cứu được thông tin hội viên từ bước trước. Bây giờ tiến hành đặt lịch tập."
+                }
+            # Mọi trường hợp khác có Observation → trả Final Answer
             return {
-                "type": "tool_call",
-                "tool_name": "schedule_appointment",
-                "arguments": {"student_id": "SV2026001", "datetime_str": "14:00 15/09/2026", "advisor_name": "PGS.TS Nguyễn Văn A"},
-                "thought": "Người dùng yêu cầu đặt lịch hẹn tư vấn cho sinh viên SV2026001. Tôi sẽ gọi tool schedule_appointment."
+                "type": "text",
+                "content": f"[Mock Agent Response]: Đã tổng hợp kết quả từ công cụ và phản hồi cho hội viên.",
+                "thought": "Đã nhận Observation từ MCP Server, tổng hợp thành câu trả lời cuối cùng."
             }
-        elif "sv2026001" in prompt_lower or "tra cứu" in prompt_lower:
+
+        # Mô phỏng nhận diện intent gọi Tool cho đề tài Gym
+        if ("đặt" in prompt_lower or "book" in prompt_lower) and ("lịch" in prompt_lower or "tập" in prompt_lower):
+            if "kiểm tra" in prompt_lower or "rảnh" in prompt_lower or "trống" in prompt_lower:
+                # Multi-step: tra cứu trước rồi mới đặt lịch
+                return {
+                    "type": "tool_call",
+                    "tool_name": "gym_query",
+                    "arguments": {"member_id": "GYM12345"},
+                    "thought": "Người dùng muốn kiểm tra rồi đặt lịch. Bước 1: Tra cứu thông tin hội viên trước."
+                }
             return {
                 "type": "tool_call",
-                "tool_name": "academic_query",
-                "arguments": {"student_id": "SV2026001"},
-                "thought": "Người dùng muốn tra cứu thông tin học vụ của sinh viên SV2026001. Tôi sẽ gọi tool academic_query."
+                "tool_name": "book_session",
+                "arguments": {"member_id": "GYM12345", "datetime_str": "18:00 15/09/2026", "trainer_name": "PT Nguyễn Văn A"},
+                "thought": "Người dùng yêu cầu đặt lịch tập Gym. Tôi sẽ gọi tool book_session."
+            }
+        elif "gym" in prompt_lower or "tra cứu" in prompt_lower or "hội viên" in prompt_lower or "thông tin" in prompt_lower:
+            # Trích xuất member_id từ prompt nếu có
+            import re
+            match = re.search(r'GYM\d+', prompt, re.IGNORECASE)
+            member_id = match.group(0).upper() if match else "GYM12345"
+            return {
+                "type": "tool_call",
+                "tool_name": "gym_query",
+                "arguments": {"member_id": member_id},
+                "thought": f"Người dùng muốn tra cứu thông tin hội viên {member_id}. Tôi sẽ gọi tool gym_query."
             }
         else:
             return {
                 "type": "text",
-                "content": f"[Mock Agent Response]: Xin chào! Quy chế học vụ VinUni yêu cầu sinh viên tích lũy tối thiểu 120 tín chỉ và duy trì GPA trên 2.0 để tốt nghiệp.",
-                "thought": "Câu hỏi chung về quy chế học vụ, trả lời trực tiếp không cần gọi Tool."
+                "content": f"[Mock Agent Response]: Xin chào! Phòng tập mở cửa từ 5:30 đến 22:00 hàng ngày. Các dịch vụ bao gồm: Gym tự do, Yoga, Pilates, Boxing, CrossFit và tập cùng PT.",
+                "thought": "Câu hỏi chung về phòng tập, trả lời trực tiếp không cần gọi Tool."
             }
 
 

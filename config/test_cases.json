@@ -1,0 +1,37 @@
+[
+  {
+    "id": "TC01",
+    "type": "direct_query",
+    "question": "Chào bạn, bạn có thể giới thiệu về các dịch vụ và nội quy cơ bản của phòng tập Gym được không?",
+    "expected_behavior": "Chatbot trả lời trực tiếp từ System Prompt về nội quy phòng gym, không cần gọi bất kỳ Tool nào.",
+    "complexity": "Low"
+  },
+  {
+    "id": "TC02",
+    "type": "single_tool_query",
+    "question": "Hãy tra cứu xem ngày mai (14/09/2026) ca 17:00 còn máy chạy bộ nào trống không?",
+    "expected_behavior": "Agent nhận diện nhu cầu tra cứu, tự động phát sinh Tool Call tra cứu lịch trống.",
+    "complexity": "Medium"
+  },
+  {
+    "id": "TC03",
+    "type": "appointment_booking",
+    "question": "Đặt cho tôi một lịch tập Yoga với PT Nguyễn Văn A vào lúc 18:00 ngày 15/09/2026, mã hội viên của tôi là GYM12345.",
+    "expected_behavior": "Agent tự động phát sinh Tool Call đặt lịch với đúng thời gian, mã hội viên và thông tin PT.",
+    "complexity": "Medium"
+  },
+  {
+    "id": "TC04",
+    "type": "multi_step_reasoning",
+    "question": "Kiểm tra xem PT Trần Thị B có rảnh vào 19:00 ngày 16/09/2026 không, nếu có thì đặt lịch tập tạ cho tôi (mã GYM12345).",
+    "expected_behavior": "Agent thực hiện chuỗi suy luận ReAct: Tra cứu lịch trống của PT trước, sau đó tiến hành đặt lịch.",
+    "complexity": "High"
+  },
+  {
+    "id": "TC05",
+    "type": "edge_case_handling",
+    "question": "Tra cứu thông tin gói tập của mã hội viên GYM99999.",
+    "expected_behavior": "Agent nhận kết quả NOT_FOUND từ Tool (mã hội viên không tồn tại) và đưa ra phản hồi lịch sự, không bịa đặt dữ liệu.",
+    "complexity": "Medium"
+  }
+]

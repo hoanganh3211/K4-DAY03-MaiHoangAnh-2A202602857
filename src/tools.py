@@ -1,6 +1,7 @@
 """
 🛠️ TOOL DEFINITIONS & EXECUTION BACKEND
 Mã nguồn chứa danh sách Tool Schemas (JSON Schema) và Execution Layer phục vụ cho MCP Server.
+Đề tài: Trợ lý đặt lịch tập Gym
 """
 
 import json
@@ -11,41 +12,43 @@ from typing import Dict, Any
 # ==============================================================================
 
 TOOLS_SCHEMA = [
-    # Tool 1: Đã được định nghĩa mẫu sẵn cho Học viên tham khảo
+    # Tool 1: Tra cứu thông tin hội viên & lịch tập Gym
     {
-        "name": "academic_query",
-        "description": "Tra cứu hồ sơ và thông tin học vụ của sinh viên VinUni bằng mã sinh viên.",
+        "name": "gym_query",
+        "description": "Tra cứu thông tin hội viên, gói tập, lịch tập và tình trạng phòng tập Gym bằng mã hội viên.",
         "parameters": {
             "type": "object",
             "properties": {
-                "student_id": {
+                "member_id": {
                     "type": "string",
-                    "description": "Mã sinh viên cần tra cứu (ví dụ: 'SV2026001')"
+                    "description": "Mã hội viên cần tra cứu (ví dụ: 'GYM12345')"
                 }
             },
-            "required": ["student_id"]
+            "required": ["member_id"]
         }
     },
-    
-    # --------------------------------------------------------------------------
-    # TODO 1.2: HỌC VIÊN HOÀN THIỆN TOOL SCHEMA CHO 'schedule_appointment'
-    # 🎯 YÊU CẦU THIẾT KẾ SCHEMA (JSON SCHEMA STANDARD):
-    # 1. Tool dùng để đặt lịch hẹn tư vấn học vụ với Cố vấn học tập VinUni.
-    # 2. Thiết kế các tham số (properties) để LLM trích xuất:
-    #    - student_id (string): Mã sinh viên cần đặt lịch (ví dụ: 'SV2026001')
-    #    - datetime_str (string): Thời gian hẹn (ví dụ: '14:00 15/09/2026')
-    #    - advisor_name (string): Tên cố vấn học tập
-    # 3. Khai báo danh sách các trường bắt buộc (required).
-    # --------------------------------------------------------------------------
+
+    # Tool 2: Đặt lịch tập Gym với PT (Hoàn thành TODO 1.2)
     {
-        "name": "schedule_appointment",
-        "description": "Đặt lịch hẹn tư vấn học vụ với Cố vấn học tập VinUni.",
+        "name": "book_session",
+        "description": "Đặt lịch buổi tập Gym với huấn luyện viên cá nhân (Personal Trainer - PT).",
         "parameters": {
             "type": "object",
             "properties": {
-                # TODO 1.2: Khai báo các thuộc tính tham số cho Tool tại đây...
+                "member_id": {
+                    "type": "string",
+                    "description": "Mã hội viên cần đặt lịch tập (ví dụ: 'GYM12345')"
+                },
+                "datetime_str": {
+                    "type": "string",
+                    "description": "Thời gian buổi tập (ví dụ: '18:00 15/09/2026')"
+                },
+                "trainer_name": {
+                    "type": "string",
+                    "description": "Tên huấn luyện viên cá nhân (PT) cần đặt lịch (ví dụ: 'PT Nguyễn Văn A')"
+                }
             },
-            "required": [] # TODO 1.2: Khai báo danh sách các trường bắt buộc tại đây...
+            "required": ["member_id", "datetime_str", "trainer_name"]
         }
     }
 ]
@@ -55,57 +58,67 @@ TOOLS_SCHEMA = [
 # ==============================================================================
 
 MOCK_DATABASE = {
-    "SV2026001": {
-        "full_name": "Nguyễn Văn An",
-        "class": "AI-K4",
-        "gpa": 3.85,
-        "email": "an.nv@vinuni.edu.vn",
-        "status": "Đang học",
-        "advisor": "PGS.TS Nguyễn Văn A"
+    "GYM12345": {
+        "full_name": "Mai Hoàng Anh",
+        "membership": "Gói Premium 12 tháng",
+        "email": "hoanganh@gmail.com",
+        "status": "Đang hoạt động",
+        "expiry_date": "31/12/2026",
+        "trainer": "PT Nguyễn Văn A",
+        "sessions_remaining": 18
     },
-    "SV2026002": {
+    "GYM67890": {
         "full_name": "Trần Thị Bình",
-        "class": "AI-K4",
-        "gpa": 3.60,
-        "email": "binh.tt@vinuni.edu.vn",
-        "status": "Đang học",
-        "advisor": "TS. Lê Thị B"
+        "membership": "Gói Basic 6 tháng",
+        "email": "binh.tt@gmail.com",
+        "status": "Đang hoạt động",
+        "expiry_date": "28/02/2027",
+        "trainer": "PT Trần Thị B",
+        "sessions_remaining": 10
     }
 }
 
 
-def execute_academic_query(student_id: str) -> str:
-    """Thực thi tra cứu học vụ theo mã sinh viên"""
-    student = MOCK_DATABASE.get(student_id.strip().upper())
-    if student:
+def execute_gym_query(member_id: str) -> str:
+    """Thực thi tra cứu thông tin hội viên Gym theo mã hội viên"""
+    member = MOCK_DATABASE.get(member_id.strip().upper())
+    if member:
         return json.dumps({
             "status": "SUCCESS",
-            "student_id": student_id,
-            "data": student
+            "member_id": member_id,
+            "data": member
         }, ensure_ascii=False)
     else:
         return json.dumps({
             "status": "NOT_FOUND",
-            "message": f"Không tìm thấy dữ liệu sinh viên có mã '{student_id}'"
+            "message": f"Không tìm thấy hội viên có mã '{member_id}'. Vui lòng kiểm tra lại mã hội viên."
         }, ensure_ascii=False)
 
 
-def execute_schedule_appointment(student_id: str, datetime_str: str, advisor_name: str = "PGS.TS Nguyễn Văn A") -> str:
-    """Thực thi đặt lịch hẹn tư vấn học vụ"""
+def execute_book_session(member_id: str, datetime_str: str, trainer_name: str = "PT Nguyễn Văn A") -> str:
+    """Thực thi đặt lịch buổi tập Gym với PT"""
+    member = MOCK_DATABASE.get(member_id.strip().upper())
+    if not member:
+        return json.dumps({
+            "status": "NOT_FOUND",
+            "message": f"Không tìm thấy hội viên có mã '{member_id}'. Không thể đặt lịch."
+        }, ensure_ascii=False)
+
     return json.dumps({
         "status": "SUCCESS",
-        "booking_id": f"BK-{student_id}-99",
-        "student_id": student_id,
+        "booking_id": f"BK-{member_id}-{datetime_str.replace(' ', '').replace('/', '')}",
+        "member_id": member_id,
+        "member_name": member["full_name"],
         "datetime": datetime_str,
-        "advisor": advisor_name,
-        "message": f"Đặt lịch thành công cho sinh viên {student_id} với {advisor_name} vào lúc {datetime_str}."
+        "trainer": trainer_name,
+        "message": f"Đặt lịch tập thành công cho hội viên {member['full_name']} ({member_id}) với {trainer_name} vào lúc {datetime_str}."
     }, ensure_ascii=False)
 
 
 # Router gọi tool thực tế
 TOOL_ROUTER = {
-    "academic_query": execute_academic_query,
-    "schedule_appointment": execute_schedule_appointment
+    "gym_query": execute_gym_query,
+    "book_session": execute_book_session
 }
 
 def dispatch_tool_call(tool_name: str, arguments: Dict[str, Any]) -> str:
